@@ -3248,7 +3248,7 @@ uint32_t ETH_HandlePTPRxPkt(uint8_t *ppkt, uint32_t *PTPRxTab)
 #include "lwipopts.h"
 
 /* debug option */
-//#define ETH_DEBUG
+#define ETH_DEBUG
 //#define ETH_RX_DUMP
 //#define ETH_TX_DUMP
 

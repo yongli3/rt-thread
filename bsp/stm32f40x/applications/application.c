@@ -29,6 +29,8 @@
 
 void rt_init_thread_entry(void* parameter)
 {
+    rt_thread_t thread;
+
     /* GDB STUB */
 #ifdef RT_USING_GDB
     gdb_set_device("uart6");
@@ -50,6 +52,15 @@ void rt_init_thread_entry(void* parameter)
         rt_kprintf("TCP/IP initialized!\n");
     }
 #endif
+		rt_kprintf("application_entry\n");
+
+    /* Create led thread */
+    thread = rt_thread_create("led",
+                led_thread_entry, RT_NULL,
+                256, 20, 20);
+    if(thread != RT_NULL)
+        rt_thread_startup(thread);
+    
 }
 
 int rt_application_init()

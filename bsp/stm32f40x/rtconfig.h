@@ -2,6 +2,8 @@
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
+#define RT_USING_TC
+
 /* RT_NAME_MAX*/
 #define RT_NAME_MAX	   8
 
@@ -63,8 +65,8 @@
 #define RT_USING_SERIAL
 
 #define RT_USING_UART1
-#define RT_USING_UART2
-#define RT_USING_UART3
+//#define RT_USING_UART2
+//#define RT_USING_UART3
 
 /* Using GPIO pin framework */
 #define RT_USING_PIN
@@ -107,7 +109,9 @@
 // #define RT_USING_DFS_ROMFS
 
 /* SECTION: lwip, a lighwight TCP/IP protocol stack */
-/* #define RT_USING_LWIP */
+
+//#define RT_USING_LWIP
+
 /* LwIP uses RT-Thread Memory Management */
 #define RT_LWIP_USING_RT_MEM
 /* Enable ICMP protocol*/
