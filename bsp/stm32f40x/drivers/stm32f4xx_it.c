@@ -110,4 +110,22 @@ void SVC_Handler(void)
   * @}
   */
 
+#ifdef  RT_USING_LWIP
+void EXTI15_10_IRQHandler(void)
+{
+    extern void rt_dm9000_isr(void);
+
+    /* enter interrupt */
+    rt_interrupt_enter();
+
+    /* Clear the DM9000A EXTI line pending bit */
+    EXTI_ClearITPendingBit(EXTI_Line13);
+
+    rt_dm9000_isr();
+
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
+#endif
+
 /******************* (C) COPYRIGHT 2011 STMicroelectronics *****END OF FILE****/

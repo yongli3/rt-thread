@@ -13,7 +13,8 @@ usart.c
 
 # add Ethernet drivers.
 if GetDepend('RT_USING_LWIP'):
-    src += ['stm32f4xx_eth.c']
+    src += ['dm9000a.c']
+#['stm32f4xx_eth.c']
 
 # add gpio drivers.
 if GetDepend('RT_USING_PIN'):

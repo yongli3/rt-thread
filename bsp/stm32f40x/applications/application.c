@@ -26,6 +26,7 @@
 #ifdef RT_USING_GDB
 #include <gdb_stub.h>
 #endif
+extern void led_thread_entry(void* parameter);
 
 void rt_init_thread_entry(void* parameter)
 {
@@ -45,7 +46,8 @@ void rt_init_thread_entry(void* parameter)
         /* register ethernetif device */
         eth_system_device_init();
 
-        rt_hw_stm32_eth_init();
+        // replace wih DM9000
+        //rt_hw_stm32_eth_init();
 
         /* init lwip system */
         lwip_sys_init();

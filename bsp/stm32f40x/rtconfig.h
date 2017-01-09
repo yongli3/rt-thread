@@ -2,7 +2,7 @@
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
-#define RT_USING_TC
+//#define RT_USING_TC
 
 /* RT_NAME_MAX*/
 #define RT_NAME_MAX	   8
@@ -14,7 +14,7 @@
 #define RT_THREAD_PRIORITY_MAX	32
 
 /* Tick per Second */
-#define RT_TICK_PER_SECOND	100
+#define RT_TICK_PER_SECOND	1000
 
 /* SECTION: RT_DEBUG */
 /* Thread Debug */
@@ -56,6 +56,9 @@
 
 /* Using Small MM */
 #define RT_USING_SMALL_MEM
+
+// <bool name="RT_USING_COMPONENTS_INIT" description="Using RT-Thread components initialization" default="true" />
+//#define RT_USING_COMPONENTS_INIT
 
 /* SECTION: Device System */
 /* Using Device System */
@@ -110,7 +113,7 @@
 
 /* SECTION: lwip, a lighwight TCP/IP protocol stack */
 
-//#define RT_USING_LWIP
+#define RT_USING_LWIP
 
 /* LwIP uses RT-Thread Memory Management */
 #define RT_LWIP_USING_RT_MEM
