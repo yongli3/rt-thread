@@ -82,6 +82,7 @@ static void delay_ms(rt_uint32_t ms)
 rt_inline rt_uint8_t dm9000_io_read(rt_uint16_t reg)
 {
     DM9000_IO = reg;
+    delay_ms(1); // FIXME timing issue
     return (rt_uint8_t) DM9000_DATA;
 }
 
@@ -89,6 +90,7 @@ rt_inline rt_uint8_t dm9000_io_read(rt_uint16_t reg)
 rt_inline void dm9000_io_write(rt_uint16_t reg, rt_uint16_t value)
 {
     DM9000_IO = reg;
+    delay_ms(1); // FIXME timing issue
     DM9000_DATA = value;
 }
 
@@ -173,7 +175,7 @@ void rt_dm9000_isr()
     int_status = dm9000_io_read(DM9000_ISR);               /* Got ISR */
     dm9000_io_write(DM9000_ISR, int_status);    /* Clear ISR status */
 
-	DM9000_TRACE("dm9000 isr: int status %04x\n", int_status);
+	//DM9000_TRACE("+%s:%04x RCR=%x\n", __func__, int_status, dm9000_io_read(DM9000_RCR));
 
     /* receive overflow */
     if (int_status & ISR_ROS)
@@ -192,7 +194,7 @@ void rt_dm9000_isr()
 	    /* disable receive interrupt */
 	    dm9000_device.imr_all = IMR_PAR | IMR_PTM;
 
-        /* a frame has been received */
+        /* send out the message: a frame has been received */
         eth_device_ready(&(dm9000_device.parent));
     }
 
@@ -201,9 +203,12 @@ void rt_dm9000_isr()
     {
         /* transmit done */
         int tx_status = dm9000_io_read(DM9000_NSR);    /* Got TX status */
-
+        //DM9000_TRACE("dm9000 isr: tx_status=%04x cnt=%d\n", tx_status, dm9000_device.packet_cnt);
+        
         if (tx_status & (NSR_TX2END | NSR_TX1END))
         {
+            DM9000_TRACE("dm9000 isr: cnt=%d\n", dm9000_device.packet_cnt);
+        
             dm9000_device.packet_cnt --;
             if (dm9000_device.packet_cnt > 0)
             {
@@ -223,7 +228,8 @@ void rt_dm9000_isr()
         }
     }
 
-    /* Re-enable interrupt mask */
+    /* Re-enable interrupt mask */    
+	DM9000_TRACE("%s:imr_all=%x\n", __func__, dm9000_device.imr_all);
     dm9000_io_write(DM9000_IMR, dm9000_device.imr_all);
 
     DM9000_IO = last_io;
@@ -251,6 +257,7 @@ static rt_err_t rt_dm9000_init(rt_device_t dev)
     }
     else
     {
+        rt_kprintf("dm9000 detect error! 0x%x\n", value);
         return -RT_ERROR;
     }
 
@@ -279,11 +286,14 @@ static rt_err_t rt_dm9000_init(rt_device_t dev)
     /* set multicast address */
     for (i = 0, oft = 0x16; i < 8; i++, oft++)
         dm9000_io_write(oft, 0xff);
-
+//while (1) 
+{
     /* Activate DM9000 */
     dm9000_io_write(DM9000_RCR, RCR_DIS_LONG | RCR_DIS_CRC | RCR_RXEN);	/* RX enable */
     dm9000_io_write(DM9000_IMR, IMR_PAR);
-
+    rt_kprintf("RCR(0x05): %02x\n", dm9000_io_read(DM9000_RCR));
+    rt_kprintf("IMR(0xFF): %02x\n", dm9000_io_read(DM9000_IMR));
+}    
 	if (dm9000_device.mode == DM9000_AUTO)
 	{
 	    while (!(phy_read(1) & 0x20))
@@ -320,7 +330,7 @@ static rt_err_t rt_dm9000_init(rt_device_t dev)
         rt_kprintf("unknown: %d ", lnk);
         break;
     }
-    rt_kprintf("mode\n");
+    rt_kprintf("mode imr_all=%x\n", dm9000_device.imr_all);
 
     dm9000_io_write(DM9000_IMR, dm9000_device.imr_all);	/* Enable TX/RX interrupt mask */
 
@@ -334,6 +344,7 @@ static rt_err_t rt_dm9000_open(rt_device_t dev, rt_uint16_t oflag)
 
 static rt_err_t rt_dm9000_close(rt_device_t dev)
 {
+    DM9000_TRACE("%s\n", __func__);
     /* RESET devie */
     phy_write(0, 0x8000);	/* PHY RESET */
     dm9000_io_write(DM9000_GPR, 0x01);	/* Power-Down PHY */
@@ -376,7 +387,7 @@ static rt_err_t rt_dm9000_control(rt_device_t dev, rt_uint8_t cmd, void *args)
 /* transmit packet. */
 rt_err_t rt_dm9000_tx( rt_device_t dev, struct pbuf* p)
 {
-	DM9000_TRACE("dm9000 tx: %d\n", p->tot_len);
+	DM9000_TRACE("+%slen=%d\n", __func__, p->tot_len);
 
     /* lock DM9000 device */
     rt_sem_take(&sem_lock, RT_WAITING_FOREVER);
@@ -448,6 +459,7 @@ rt_err_t rt_dm9000_tx( rt_device_t dev, struct pbuf* p)
     /* unlock DM9000 device */
     rt_sem_release(&sem_lock);
 
+    //DM9000_TRACE("dm9000 tx wait ack\n");
     /* wait ack */
     rt_sem_take(&sem_ack, RT_WAITING_FOREVER);
 
@@ -462,6 +474,7 @@ struct pbuf *rt_dm9000_rx(rt_device_t dev)
     struct pbuf* p;
     rt_uint32_t rxbyte;
 
+    //DM9000_TRACE("+%s\n", __func__);
     /* init p pointer */
     p = RT_NULL;
 
@@ -471,17 +484,20 @@ struct pbuf *rt_dm9000_rx(rt_device_t dev)
     /* Check packet ready or not */
     dm9000_io_read(DM9000_MRCMDX);	    		/* Dummy read */
     rxbyte = DM9000_inb(DM9000_DATA_BASE);		/* Got most updated data */
-    if (rxbyte)
+    //DM9000_TRACE("%s rxbyte=0x%x\n", __func__, rxbyte);
+     
+    if (rxbyte & 0x03)
     {
         rt_uint16_t rx_status, rx_len;
         rt_uint16_t* data;
 
-        if (rxbyte > 1)
+        if ((rxbyte & 0x03) > 1)
         {
-			DM9000_TRACE("dm9000 rx: rx error, stop device\n");
+			DM9000_TRACE("dm9000 rx: rx error %x, stop device\n", rxbyte);
 
             dm9000_io_write(DM9000_RCR, 0x00);	/* Stop Device */
             dm9000_io_write(DM9000_ISR, 0x80);	/* Stop INT request */
+            while (1);
         }
 
         /* A packet ready now  & Get status/length */

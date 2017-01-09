@@ -48,6 +48,7 @@ void rt_init_thread_entry(void* parameter)
 
         // replace wih DM9000
         //rt_hw_stm32_eth_init();
+        rt_hw_dm9000_init();
 
         /* init lwip system */
         lwip_sys_init();

@@ -81,6 +81,7 @@
 #define RT_USING_CONSOLE
 /* the buffer size of console*/
 #define RT_CONSOLEBUF_SIZE	128
+//#define RT_CONSOLE_DEVICE_NAME	    "uart1"
 
 /* SECTION: finsh, a C-Express shell */
 #define RT_USING_FINSH
@@ -114,11 +115,15 @@
 /* SECTION: lwip, a lighwight TCP/IP protocol stack */
 
 #define RT_USING_LWIP
+/* Trace LwIP protocol */
+#define RT_LWIP_DEBUG
 
 /* LwIP uses RT-Thread Memory Management */
 #define RT_LWIP_USING_RT_MEM
 /* Enable ICMP protocol*/
 #define RT_LWIP_ICMP
+/* Enable IGMP protocol */
+#define RT_LWIP_IGMP
 /* Enable UDP protocol*/
 #define RT_LWIP_UDP
 /* Enable TCP protocol*/
@@ -129,17 +134,20 @@
 /* the number of simulatenously active TCP connections*/
 #define RT_LWIP_TCP_PCB_NUM	5
 
+/* Using DHCP */
+//#define RT_LWIP_DHCP
+
 /* ip address of target*/
 #define RT_LWIP_IPADDR0	192
 #define RT_LWIP_IPADDR1	168
-#define RT_LWIP_IPADDR2	1
+#define RT_LWIP_IPADDR2	0
 #define RT_LWIP_IPADDR3	201
 
 /* gateway address of target*/
 #define RT_LWIP_GWADDR0	192
 #define RT_LWIP_GWADDR1	168
-#define RT_LWIP_GWADDR2	1
-#define RT_LWIP_GWADDR3	1
+#define RT_LWIP_GWADDR2	0
+#define RT_LWIP_GWADDR3	3
 
 /* mask address of target*/
 #define RT_LWIP_MSKADDR0	255
