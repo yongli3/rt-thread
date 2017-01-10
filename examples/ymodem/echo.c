@@ -46,7 +46,7 @@ void rym_cat_vcom(void)
     {
         rt_kprintf("could not find idev\n");
     }
-    odev = rt_device_find("vcom");
+    odev = rt_device_find("uart2");
     if (!odev)
     {
         rt_kprintf("could not find odev\n");
@@ -56,4 +56,6 @@ void rym_cat_vcom(void)
 }
 FINSH_FUNCTION_EXPORT(rym_cat_vcom, test the YModem);
 #endif
+MSH_CMD_EXPORT(rym_cat_vcom, test the YModem);
 
+//FINSH_FUNCTION_EXPORT_ALIAS(rym_cat_vcom, __rym_cat_vcom, test the YModem);
