@@ -2,6 +2,9 @@
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
+// add ymodem tools
+#define RT_USING_RYM
+
 //#define RT_USING_TC
 
 /* RT_NAME_MAX*/
