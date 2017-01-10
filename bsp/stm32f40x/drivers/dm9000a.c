@@ -21,7 +21,7 @@
 //#include "stm32f10x.h"
 //#include "stm32f10x_fsmc.h"
 
-#define DM9000_DEBUG		1
+//#define DM9000_DEBUG		1
 #if DM9000_DEBUG
 #define DM9000_TRACE	rt_kprintf
 #else
@@ -71,6 +71,14 @@ static struct rt_semaphore sem_ack, sem_lock;
 
 void rt_dm9000_isr(void);
 
+// 1000 = 66us
+static void loop_delay(unsigned int count)
+{
+    unsigned int i;
+    for (i = 0; i < count; i++) {
+    }
+}
+
 static void delay_ms(rt_uint32_t ms)
 {
     rt_uint32_t len;
@@ -82,7 +90,7 @@ static void delay_ms(rt_uint32_t ms)
 rt_inline rt_uint8_t dm9000_io_read(rt_uint16_t reg)
 {
     DM9000_IO = reg;
-    delay_ms(1); // FIXME timing issue
+    loop_delay(1); // FIXME timing issue
     return (rt_uint8_t) DM9000_DATA;
 }
 
@@ -90,7 +98,7 @@ rt_inline rt_uint8_t dm9000_io_read(rt_uint16_t reg)
 rt_inline void dm9000_io_write(rt_uint16_t reg, rt_uint16_t value)
 {
     DM9000_IO = reg;
-    delay_ms(1); // FIXME timing issue
+    loop_delay(1); // FIXME timing issue
     DM9000_DATA = value;
 }
 
@@ -493,8 +501,7 @@ struct pbuf *rt_dm9000_rx(rt_device_t dev)
 
         if ((rxbyte & 0x03) > 1)
         {
-			DM9000_TRACE("dm9000 rx: rx error %x, stop device\n", rxbyte);
-
+			rt_kprintf("dm9000 rx: rx error %x, stop device\n", rxbyte);
             dm9000_io_write(DM9000_RCR, 0x00);	/* Stop Device */
             dm9000_io_write(DM9000_ISR, 0x80);	/* Stop INT request */
             while (1);
@@ -789,3 +796,5 @@ void dm9000(void)
 #include <finsh.h>
 FINSH_FUNCTION_EXPORT(dm9000, dm9000 register dump);
 #endif
+MSH_CMD_EXPORT(dm9000, dm9000 register dump);
+

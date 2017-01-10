@@ -19,8 +19,22 @@
 /* SECTION: RT_DEBUG */
 /* Thread Debug */
 #define RT_DEBUG
+//#define RT_DEBUG_MEM 				(1)
+//#define RT_DEBUG_SCHEDULER 			(1)
+//#define RT_DEBUG_IPC 				(1)
+//#define THREAD_DEBUG
+//#define IRQ_DEBUG
 #define RT_USING_OVERFLOW_CHECK
 
+//#define RT_IRQHDL_DEBUG
+//#define RT_USART_DEBUG
+//#define RT_LEUART_DEBUG
+//#define RT_IIC_DEBUG
+//#define RT_MISC_DEBUG
+//#define RT_ADC_DEBUG
+//#define RT_ACMP_DEBUG
+//#define RT_TIMER_DEBUG
+//#define RT_RTC_DEBUG
 /* Using Hook */
 #define RT_USING_HOOK
 
@@ -30,6 +44,7 @@
 /* #define RT_USING_TIMER_SOFT */
 #define RT_TIMER_THREAD_PRIO		4
 #define RT_TIMER_THREAD_STACK_SIZE	512
+//#define RT_TIMER_TICK_PER_SECOND	(10)
 
 /* SECTION: IPC */
 /* Using Semaphore*/
@@ -68,7 +83,7 @@
 #define RT_USING_SERIAL
 
 #define RT_USING_UART1
-//#define RT_USING_UART2
+#define RT_USING_UART2
 //#define RT_USING_UART3
 
 /* Using GPIO pin framework */
@@ -89,9 +104,12 @@
 #define FINSH_USING_SYMTAB
 #define FINSH_USING_DESCRIPTION
 
+#define FINSH_USING_MSH
+#define FINSH_USING_MSH_DEFAULT
+
 /* SECTION: device filesystem */
 /* Using Device file system */
-/* #define RT_USING_DFS */
+#define RT_USING_DFS
 /* the max number of mounted filesystem */
 #define DFS_FILESYSTEMS_MAX			2
 /* the max number of opened files 		*/
@@ -115,9 +133,11 @@
 /* SECTION: lwip, a lighwight TCP/IP protocol stack */
 
 #define RT_USING_LWIP
+// make sure use the new version
+#define RT_USING_LWIP141
 /* Trace LwIP protocol */
 #define RT_LWIP_DEBUG
-
+#define RT_USING_NETUTILS
 /* LwIP uses RT-Thread Memory Management */
 #define RT_LWIP_USING_RT_MEM
 /* Enable ICMP protocol*/
@@ -135,7 +155,7 @@
 #define RT_LWIP_TCP_PCB_NUM	5
 
 /* Using DHCP */
-//#define RT_LWIP_DHCP
+#define RT_LWIP_DHCP
 
 /* ip address of target*/
 #define RT_LWIP_IPADDR0	192
