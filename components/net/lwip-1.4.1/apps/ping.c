@@ -23,7 +23,7 @@
 /** ping receive timeout - in milliseconds */
 #define PING_RCV_TIMEO 1000
 /** ping delay - in milliseconds */
-#define PING_DELAY     100
+#define PING_DELAY     (RT_TICK_PER_SECOND*2)
 
 /** ping identifier - must fit on a u16_t */
 #ifndef PING_ID

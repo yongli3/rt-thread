@@ -289,7 +289,7 @@ static rt_err_t rt_dm9000_init(rt_device_t dev)
 	    while (!(phy_read(1) & 0x20))
 	    {
 	        /* autonegation complete bit */
-	        rt_thread_delay(10);
+	        rt_thread_delay(RT_TICK_PER_SECOND/100); // delay 10ms
 	        i++;
 	        if (i == 10000)
 	        {
@@ -553,7 +553,7 @@ struct pbuf *rt_dm9000_rx(rt_device_t dev)
 
                 /* RESET device */
                 dm9000_io_write(DM9000_NCR, NCR_RST);
-                rt_thread_delay(1); /* delay 5ms */
+                rt_thread_delay(RT_TICK_PER_SECOND/100); /* delay 10ms */
             }
 
             /* it issues an error, release pbuf */

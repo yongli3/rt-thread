@@ -33,7 +33,7 @@ void udpclient(const char* url, int port, int count)
               (struct sockaddr *)&server_addr, sizeof(struct sockaddr));
 
        /* 线程休眠一段时间 */
-       rt_thread_delay(50);
+       rt_thread_delay(RT_TICK_PER_SECOND);
 
        /* 计数值减一 */
        count --;

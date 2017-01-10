@@ -2,6 +2,9 @@
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
+// Add MQTT 
+#define RT_USING_PAHOMQTT
+
 // add ymodem tools
 #define RT_USING_RYM
 
