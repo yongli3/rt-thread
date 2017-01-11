@@ -2,6 +2,27 @@
 #include <lwip/sockets.h> /* 使用BSD Socket接口必须包含sockets.h这个头文件 */
 
 static const char send_data[] = "This is TCP Server from RT-Thread."; /* 发送用到的数据 */
+
+unsigned char rx_buffer[1024];
+
+struct paramet {
+    rt_device_t uart2dev;
+    int connected;
+};
+
+static void uart2in_thread_entry(void* parameter)
+{
+    rt_size_t read_len;
+
+    struct paramet *par = parameter;
+    
+    rt_kprintf("+%s\n", __func__);
+	while(1) {
+        read_len = rt_device_read(par->uart2dev, 0, rx_buffer, sizeof(rx_buffer));
+        rt_kprintf("uart2 read=%d\n", read_len);
+    }
+}
+
 void tcpserv(void* parameter)
 {
    char *recv_data; /* 用于接收的指针，后面会做一次动态分配以请求可用内存 */
@@ -11,6 +32,8 @@ void tcpserv(void* parameter)
    rt_bool_t stop = RT_FALSE; /* 停止标志 */
    rt_device_t uart2dev;
    rt_err_t res;
+   rt_thread_t thread;
+   struct paramet par;
 
    recv_data = rt_malloc(1024); /* 分配接收用的数据缓冲 */
    if (recv_data == RT_NULL)
@@ -86,6 +109,16 @@ void tcpserv(void* parameter)
        /* 接受返回的client_addr指向了客户端的地址信息 */
        rt_kprintf("I got a connection from (%s , %d)\n",
                   inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
+
+        // start the uart2 input monitor thread
+        par.connected = connected;
+        par.uart2dev =uart2dev;
+        thread = rt_thread_create("uart2in", uart2in_thread_entry, &par, 512, 20, 20);
+        if(thread != RT_NULL) {
+            rt_thread_startup(thread);
+        } else {
+            rt_kprintf("thread create fail!\n");
+        }
 
        /* 客户端连接的处理 */
        while (1)
