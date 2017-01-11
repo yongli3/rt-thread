@@ -41,12 +41,13 @@ void rym_cat_vcom(void)
 
     rt_thread_delay(RT_TICK_PER_SECOND*10);
 
-    idev = rt_device_find("uart1");
+    idev = rt_device_find("uart2");
     if (!idev)
     {
         rt_kprintf("could not find idev\n");
     }
-    odev = rt_device_find("uart2");
+    
+    odev = rt_device_find("uart1");
     if (!odev)
     {
         rt_kprintf("could not find odev\n");

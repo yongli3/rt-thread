@@ -2,6 +2,12 @@
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
+//#define RT_USING_NEWLIB
+#define RT_USING_LIBC
+#define RT_USING_PTHREADS
+
+#define RT_USING_DFS_DEVFS
+
 // Add MQTT 
 #define RT_USING_PAHOMQTT
 

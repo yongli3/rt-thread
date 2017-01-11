@@ -2,7 +2,7 @@
 
 #define UDP_ECHO_PORT   7
 
-void udpecho_entry(void *parameter)
+static void udpecho_entry(void *parameter)
 {
 	struct netconn *conn;
 	struct netbuf *buf;

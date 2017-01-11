@@ -2,7 +2,7 @@
 
 #define TCP_ECHO_PORT   7
 
-void tcpecho_entry(void *parameter)
+static void tcpecho_entry(void *parameter)
 {
 	struct netconn *conn, *newconn;
 	err_t err;

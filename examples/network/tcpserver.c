@@ -3,24 +3,41 @@
 
 static const char send_data[] = "This is TCP Server from RT-Thread."; /* 发送用到的数据 */
 
-unsigned char rx_buffer[1024];
+#define BUFF_SIZE  (2048)
+
+unsigned char uart2_rx_buffer[BUFF_SIZE];
+
+struct rt_semaphore uart2_sem;
 
 struct paramet {
     rt_device_t uart2dev;
     int connected;
 };
 
+static rt_err_t uart2_rx_ind(rt_device_t dev, rt_size_t size)
+{
+    rt_kprintf("rx %d\n", size);
+    return rt_sem_release(&uart2_sem);
+}
+
+// monitor the uart2 RX
 static void uart2in_thread_entry(void* parameter)
 {
+    int connected;
     rt_size_t read_len;
 
     struct paramet *par = parameter;
     
     rt_kprintf("+%s\n", __func__);
-	while(1) {
-        read_len = rt_device_read(par->uart2dev, 0, rx_buffer, sizeof(rx_buffer));
-        rt_kprintf("uart2 read=%d\n", read_len);
-    }
+
+    rt_sem_take(&uart2_sem, RT_WAITING_FOREVER);
+
+    read_len = rt_device_read(par->uart2dev, 0, uart2_rx_buffer, sizeof(uart2_rx_buffer));
+    rt_kprintf("uart2 read=%d\n", read_len);
+
+    // send to network
+    connected = par->connected;
+    send(connected, uart2_rx_buffer, read_len, 0);
 }
 
 void tcpserv(void* parameter)
@@ -28,14 +45,17 @@ void tcpserv(void* parameter)
    char *recv_data; /* 用于接收的指针，后面会做一次动态分配以请求可用内存 */
    rt_uint32_t sin_size;
    int sock, connected, bytes_received;
+   unsigned int total_received = 0;
    struct sockaddr_in server_addr, client_addr;
    rt_bool_t stop = RT_FALSE; /* 停止标志 */
    rt_device_t uart2dev;
    rt_err_t res;
    rt_thread_t thread;
    struct paramet par;
+   int int_lvl;
+   rt_uint16_t odev_flag;
 
-   recv_data = rt_malloc(1024); /* 分配接收用的数据缓冲 */
+   recv_data = rt_malloc(BUFF_SIZE); /* 分配接收用的数据缓冲 */
    if (recv_data == RT_NULL)
    {
        rt_kprintf("No memory\n");
@@ -48,9 +68,16 @@ void tcpserv(void* parameter)
     {
         rt_kprintf("could not find odev\n");
     }
+
+    rt_sem_init(&uart2_sem, "uart2_sem", 0, RT_IPC_FLAG_FIFO);
     
+    int_lvl = rt_hw_interrupt_disable();
+    rt_device_set_rx_indicate(uart2dev, uart2_rx_ind);
+    odev_flag = uart2dev->flag;
     uart2dev->flag &= ~RT_DEVICE_FLAG_STREAM;
-    res = rt_device_open(uart2dev, 0);
+    rt_hw_interrupt_enable(int_lvl);
+    
+    res = rt_device_open(uart2dev, uart2dev->flag);
     if (res != RT_EOK)
     {
         rt_kprintf("open output device error: 0x%x", -res);
@@ -58,7 +85,18 @@ void tcpserv(void* parameter)
     }
 
     rt_device_write(uart2dev, 0, send_data, strlen(send_data));
-    
+
+#if 0
+while (1) 
+{
+    rt_kprintf("uart2 ... ");
+    rt_sem_take(&uart2_sem, RT_WAITING_FOREVER);
+    bytes_received = rt_device_read(uart2dev, 0, uart2_rx_buffer, sizeof(uart2_rx_buffer));
+    rt_kprintf("recv=%d\n", bytes_received);
+    //rt_thread_delay(RT_TICK_PER_SECOND/10);
+}
+#endif
+
    /* 一个socket在使用前，需要预先创建出来，指定SOCK_STREAM为TCP的socket */
    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
    {
@@ -110,6 +148,7 @@ void tcpserv(void* parameter)
        rt_kprintf("I got a connection from (%s , %d)\n",
                   inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
 
+#if 1
         // start the uart2 input monitor thread
         par.connected = connected;
         par.uart2dev =uart2dev;
@@ -119,17 +158,19 @@ void tcpserv(void* parameter)
         } else {
             rt_kprintf("thread create fail!\n");
         }
-
+#endif
        /* 客户端连接的处理 */
+        total_received = 0;
        while (1)
        {
            /* 发送数据到connected socket */
            //send(connected, send_data, strlen(send_data), 0);
 
-           /* 从connected socket中接收数据，接收buffer是1024大小，但并不一定能够收到1024大小的数据 */
-           bytes_received = recv(connected,recv_data, 1024, 0);
-
-           rt_kprintf("%d rece=%d\n", rt_tick_get(), bytes_received);
+           /* 从connected socket中接收数据，接收buffer是BUFF_SIZE大小，但并不一定能够收到BUFF_SIZE大小的数据 */
+           
+           bytes_received = recv(connected, recv_data, BUFF_SIZE, 0);
+           total_received += bytes_received;
+           rt_kprintf("%d rcv=%d total=%d\n", rt_tick_get(), bytes_received, total_received);
            
            if (bytes_received <= 0)
            {
