@@ -16,7 +16,7 @@ struct paramet {
 
 static rt_err_t uart2_rx_ind(rt_device_t dev, rt_size_t size)
 {
-    rt_kprintf("rx %d\n", size);
+    //rt_kprintf("rx_ind %d\n", size);
     return rt_sem_release(&uart2_sem);
 }
 
@@ -30,14 +30,16 @@ static void uart2in_thread_entry(void* parameter)
     
     rt_kprintf("+%s\n", __func__);
 
-    rt_sem_take(&uart2_sem, RT_WAITING_FOREVER);
-
-    read_len = rt_device_read(par->uart2dev, 0, uart2_rx_buffer, sizeof(uart2_rx_buffer));
-    rt_kprintf("uart2 read=%d\n", read_len);
-
-    // send to network
-    connected = par->connected;
-    send(connected, uart2_rx_buffer, read_len, 0);
+    while (1) {
+        rt_sem_take(&uart2_sem, RT_WAITING_FOREVER);
+        read_len = rt_device_read(par->uart2dev, 0, uart2_rx_buffer, sizeof(uart2_rx_buffer));
+        rt_kprintf("rx=%d\n", read_len);
+        if (read_len > 0) {
+            // send to network
+            connected = par->connected;
+            send(connected, uart2_rx_buffer, read_len, 0);
+        }
+    }
 }
 
 void tcpserv(void* parameter)
@@ -74,7 +76,12 @@ void tcpserv(void* parameter)
     int_lvl = rt_hw_interrupt_disable();
     rt_device_set_rx_indicate(uart2dev, uart2_rx_ind);
     odev_flag = uart2dev->flag;
+    // change to RX interrupt mode, better than DMA mode
     uart2dev->flag &= ~RT_DEVICE_FLAG_STREAM;
+    uart2dev->flag &= ~RT_DEVICE_FLAG_DMA_RX;
+    uart2dev->flag |= RT_DEVICE_FLAG_INT_RX;
+    
+    rt_kprintf("flag=%x-%x\n", odev_flag, uart2dev->flag);
     rt_hw_interrupt_enable(int_lvl);
     
     res = rt_device_open(uart2dev, uart2dev->flag);
@@ -152,7 +159,7 @@ while (1)
         // start the uart2 input monitor thread
         par.connected = connected;
         par.uart2dev =uart2dev;
-        thread = rt_thread_create("uart2in", uart2in_thread_entry, &par, 512, 20, 20);
+        thread = rt_thread_create("uart2in", uart2in_thread_entry, &par, 512, 12, 20);
         if(thread != RT_NULL) {
             rt_thread_startup(thread);
         } else {

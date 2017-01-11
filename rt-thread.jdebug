@@ -16,7 +16,7 @@ void OnProjectLoad (void) {
   Project.SetTIFSpeed ("4 MHz");
   Project.AddSvdFile ("Cortex-M4.svd");
   Project.AddSvdFile ("/opt/SEGGER/ozone/2.18.3/Config/Peripherals/STM32F407IG.svd");
-  File.Open ("/home/yongli/rt-thread/bsp/stm32f40x/rtthread-stm32f4xx.axf");
+  File.Open ("/home/stf/rt-thread/bsp/stm32f40x/rtthread-stm32f4xx.axf");
 }
 
 /*********************************************************************
