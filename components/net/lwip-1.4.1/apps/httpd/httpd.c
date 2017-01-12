@@ -2575,6 +2575,243 @@ void httpd_init(void)
 }
 
 #endif
+
+#if LWIP_HTTPD_CGI
+static char *ControlCGIHandler(int iIndex, int iNumParams, char *pcParam[],
+                              char *pcValue[]);
+static char *SetTextCGIHandler(int iIndex, int iNumParams, char *pcParam[],
+                              char *pcValue[]);
+static const tCGI g_psConfigCGIURIs[] =
+{
+    { "/io.cgi", ControlCGIHandler },      // CGI_INDEX_CONTROL
+//    { "/settxt.cgi", SetTextCGIHandler }          // CGI_INDEX_TEXT
+};
+
+#define NUM_CONFIG_CGI_URIS     (sizeof(g_psConfigCGIURIs) / sizeof(tCGI))
+#define DEFAULT_CGI_RESPONSE    "/io_cgi.ssi"
+#define PARAM_ERROR_RESPONSE    "/perror.htm"
+#define Null 0 
+typedef enum {false = 0, true = !false} bool;
+
+static bool
+CheckDecimalParam(const char *pcValue, int32_t *pi32Value)
+{
+    uint32_t ui32Loop;
+    bool bStarted;
+    bool bFinished;
+    bool bNeg;
+    int32_t i32Accum;
+
+    //
+    // Check that the string is a valid decimal number.
+    //
+    bStarted = false;
+    bFinished = false;
+    bNeg = false;
+    ui32Loop = 0;
+    i32Accum = 0;
+
+    while(pcValue[ui32Loop])
+    {
+        //
+        // Ignore whitespace before the string.
+        //
+        if(!bStarted)
+        {
+            if((pcValue[ui32Loop] == ' ') || (pcValue[ui32Loop] == '\t'))
+            {
+                ui32Loop++;
+                continue;
+            }
+
+            //
+            // Ignore a + or - character as long as we have not started.
+            //
+            if((pcValue[ui32Loop] == '+') || (pcValue[ui32Loop] == '-'))
+            {
+                //
+                // If the string starts with a '-', remember to negate the
+                // result.
+                //
+                bNeg = (pcValue[ui32Loop] == '-') ? true : false;
+                bStarted = true;
+                ui32Loop++;
+            }
+            else
+            {
+                //
+                // We found something other than whitespace or a sign character
+                // so we start looking for numerals now.
+                //
+                bStarted = true;
+            }
+        }
+
+        if(bStarted)
+        {
+            if(!bFinished)
+            {
+                //
+                // We expect to see nothing other than valid digit characters
+                // here.
+                //
+                if((pcValue[ui32Loop] >= '0') && (pcValue[ui32Loop] <= '9'))
+                {
+                    i32Accum = (i32Accum * 10) + (pcValue[ui32Loop] - '0');
+                }
+                else
+                {
+                    //
+                    // Have we hit whitespace?  If so, check for no more
+                    // characters until the end of the string.
+                    //
+                    if((pcValue[ui32Loop] == ' ') || (pcValue[ui32Loop] == '\t'))
+                    {
+                        bFinished = true;
+                    }
+                    else
+                    {
+                        //
+                        // We got something other than a digit or whitespace so
+                        // this makes the string invalid as a decimal number.
+                        //
+                        return(false);
+                    }
+                }
+            }
+            else
+            {
+                //
+                // We are scanning for whitespace until the end of the string.
+                //
+                if((pcValue[ui32Loop] != ' ') && (pcValue[ui32Loop] != '\t'))
+                {
+                    //
+                    // We found something other than whitespace so the string
+                    // is not valid.
+                    //
+                    return(false);
+                }
+            }
+
+            //
+            // Move on to the next character in the string.
+            //
+            ui32Loop++;
+        }
+    }
+
+    //
+    // If we drop out of the loop, the string must be valid.  All we need to do
+    // now is negate the accumulated value if the string started with a '-'.
+    //
+    *pi32Value =  bNeg ? -i32Accum : i32Accum;
+    return(true);
+}
+
+static int32_t
+FindCGIParameter(const char *pcToFind, char *pcParam[], int32_t iNumParams)
+{
+    int32_t iLoop;
+
+    //
+    // Scan through all the parameters in the array.
+    //
+    for(iLoop = 0; iLoop < iNumParams; iLoop++)
+    {
+        //
+        // Does the parameter name match the provided string?
+        //
+        if(strcmp(pcToFind, pcParam[iLoop]) == 0)
+        {
+            //
+            // We found a match - return the index.
+            //
+            return(iLoop);
+        }
+    }
+
+    //
+    // If we drop out, the parameter was not found.
+    //
+    return(-1);
+}
+
+static int32_t
+GetCGIParam(const char *pcName, char *pcParams[], char *pcValue[],
+            int32_t iNumParams, bool *pbError)
+{
+    int32_t i32Param;
+    int32_t i32Value;
+    bool bRetcode;
+
+    //
+    // Is the parameter we are looking for in the list?
+    //
+    i32Param = FindCGIParameter(pcName, pcParams, iNumParams);
+    if(i32Param != -1)
+    {
+        //
+        // We found the parameter so now get its value.
+        //
+        bRetcode = CheckDecimalParam(pcValue[i32Param], &i32Value);
+        if(bRetcode)
+        {
+            //
+            // All is well - return the parameter value.
+            //
+            return(i32Value);
+        }
+    }
+
+    //
+    // If we reach here, there was a problem so return 0 and set the error
+    // flag.
+    //
+    *pbError = true;
+    return(0);
+}
+
+static char *
+ControlCGIHandler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    int lLEDState, lSpeed;
+    bool bParamError;
+
+    //
+    // We have not encountered any parameter errors yet.
+    //
+    bParamError = false;
+
+    //
+    // Get each of the expected parameters.
+    //
+    lLEDState = FindCGIParameter("LEDOn", pcParam, iNumParams);
+    lSpeed = GetCGIParam("speed_percent", pcParam, pcValue, iNumParams,
+                         &bParamError);
+
+    //
+    // Was there any error reported by the parameter parser?
+    //
+    if(bParamError || (lSpeed < 0) || (lSpeed > 100))
+    {
+        return(PARAM_ERROR_RESPONSE);
+    }
+
+    //
+    // We got all the parameters and the values were within the expected ranges
+    // so go ahead and make the changes.
+    //
+    //io_set_led((lLEDState == -1) ? false : true);
+    //io_set_animation_speed((unsigned long)lSpeed);
+
+    //
+    // Send back the default response page.
+    //
+    return(DEFAULT_CGI_RESPONSE);
+}
+
+#endif
 /**
  * @ingroup httpd
  * Initialize the httpd: set up a listening PCB and bind it to the defined port
@@ -2592,6 +2829,10 @@ httpd_init(void)
 #endif
 #endif
   LWIP_DEBUGF(HTTPD_DEBUG, ("httpd_init\n"));
+
+#if LWIP_HTTPD_CGI
+  http_set_cgi_handlers(g_psConfigCGIURIs, NUM_CONFIG_CGI_URIS);
+#endif
 
   pcb = tcp_new();
   LWIP_ASSERT("httpd_init: tcp_new failed", pcb != NULL);
@@ -2651,6 +2892,16 @@ http_set_cgi_handlers(const tCGI *cgis, int num_handlers)
   g_iNumCGIs = num_handlers;
 }
 #endif /* LWIP_HTTPD_CGI */
+
+#if LWIP_HTTPD_SUPPORT_POST
+void httpd_post_finished(void *connection, char *response_uri, u16_t response_uri_len)
+{
+    struct http_state *hs = (struct http_state *)connection;
+    if(hs->file != NULL) {
+        strncpy(response_uri, hs->file,response_uri_len);
+    }
+}
+#endif
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>

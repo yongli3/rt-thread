@@ -51,7 +51,7 @@
 
 /** Set this to 1 to support CGI (old style) */
 #if !defined LWIP_HTTPD_CGI || defined __DOXYGEN__
-#define LWIP_HTTPD_CGI            0
+#define LWIP_HTTPD_CGI            1
 #endif
 
 /** Set this to 1 to support CGI (new style) */
