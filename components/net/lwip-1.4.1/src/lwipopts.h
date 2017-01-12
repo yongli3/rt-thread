@@ -180,7 +180,8 @@
 #define TCP_QUEUE_OOSEQ             1
 
 /* TCP Maximum segment size. */
-#define TCP_MSS                     1460
+#define TCP_MSS                     536
+//1460
 
 /* TCP sender buffer space (bytes). */
 #ifdef RT_LWIP_TCP_SND_BUF

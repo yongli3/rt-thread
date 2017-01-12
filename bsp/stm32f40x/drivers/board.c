@@ -65,6 +65,8 @@ void  SysTick_Configuration(void)
 
     SysTick_Config(cnts);
     SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
+
+    NVIC_SetPriority(SysTick_IRQn, 6);
 }
 
 /**

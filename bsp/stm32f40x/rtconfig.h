@@ -14,7 +14,8 @@
 // add ymodem tools
 #define RT_USING_RYM
 
-//#define RT_USING_TC
+// Add more kernel tools
+#define RT_USING_TC
 
 /* RT_NAME_MAX*/
 #define RT_NAME_MAX	   8
@@ -117,7 +118,7 @@
 #define FINSH_USING_DESCRIPTION
 
 #define FINSH_USING_MSH
-#define FINSH_USING_MSH_DEFAULT
+//#define FINSH_USING_MSH_DEFAULT
 
 /* SECTION: device filesystem */
 /* Using Device file system */

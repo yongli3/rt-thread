@@ -473,6 +473,7 @@ int device_test(const char * device_name)
 {
     rt_device_t device = RT_NULL;
 
+    rt_kprintf("%s %s\n", __func__, device_name);
     // step 1:find device
     device = rt_device_find(device_name);
     if( device == RT_NULL)

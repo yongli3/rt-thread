@@ -17,7 +17,7 @@ struct paramet {
 static rt_err_t uart2_rx_ind(rt_device_t dev, rt_size_t size)
 {
     //rt_kprintf("rx_ind %d\n", size);
-    return rt_sem_release(&uart2_sem);
+    //return rt_sem_release(&uart2_sem);
 }
 
 // monitor the uart2 RX
@@ -31,14 +31,15 @@ static void uart2in_thread_entry(void* parameter)
     rt_kprintf("+%s\n", __func__);
 
     while (1) {
-        rt_sem_take(&uart2_sem, RT_WAITING_FOREVER);
+        //rt_sem_take(&uart2_sem, RT_WAITING_FOREVER);
         read_len = rt_device_read(par->uart2dev, 0, uart2_rx_buffer, sizeof(uart2_rx_buffer));
-        rt_kprintf("rx=%d\n", read_len);
+        //rt_kprintf("rx=%d\n", read_len);
         if (read_len > 0) {
             // send to network
             connected = par->connected;
             send(connected, uart2_rx_buffer, read_len, 0);
         }
+        rt_thread_delay(RT_TICK_PER_SECOND/100); // 10ms loop
     }
 }
 
@@ -152,8 +153,8 @@ while (1)
        /* 返回的是连接成功的socket */
 
        /* 接受返回的client_addr指向了客户端的地址信息 */
-       rt_kprintf("I got a connection from (%s , %d)\n",
-                  inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port));
+       rt_kprintf("I got a connection from (%s , %d) %d\n",
+                  inet_ntoa(client_addr.sin_addr),ntohs(client_addr.sin_port), connected);
 
 #if 1
         // start the uart2 input monitor thread

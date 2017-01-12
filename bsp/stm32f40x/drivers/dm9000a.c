@@ -188,12 +188,12 @@ void rt_dm9000_isr()
     /* receive overflow */
     if (int_status & ISR_ROS)
     {
-        rt_kprintf("overflow\n");
+        rt_kprintf("eth1 overflow\n");
     }
 
     if (int_status & ISR_ROOS)
     {
-        rt_kprintf("overflow counter overflow\n");
+        rt_kprintf("eth1 counter overflow\n");
     }
 
     /* Received the coming packet */

@@ -81,6 +81,8 @@ if GetDepend(['RT_LWIP_PPP']):
 # For testing apps
 if GetDepend(['RT_USING_NETUTILS']):
     src += Glob('./apps/*.c')
+    src += Glob('./apps/httpd/*.c')
+    path += [GetCurrentDir() + '/src/apps/httpd']
 
 group = DefineGroup('LwIP', src, depend = ['RT_USING_LWIP', 'RT_USING_LWIP141'], CPPPATH = path)
 

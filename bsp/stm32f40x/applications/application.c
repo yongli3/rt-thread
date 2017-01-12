@@ -110,9 +110,7 @@ void rt_init_thread_entry(void* parameter)
 		rt_kprintf("application_entry\n");
 
     /* Create led thread */
-    thread = rt_thread_create("led",
-                led_thread_entry, RT_NULL,
-                256, 20, 20);
+    thread = rt_thread_create("led", led_thread_entry, RT_NULL, 256, RT_THREAD_PRIORITY_MAX - 1, 20);
     if(thread != RT_NULL)
         rt_thread_startup(thread);
     

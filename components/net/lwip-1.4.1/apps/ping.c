@@ -191,7 +191,7 @@ int cmd_ping(int argc, char **argv)
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
-FINSH_FUNCTION_EXPORT(cmd_ping, ping network host111);
+FINSH_FUNCTION_EXPORT(ping, ping network host ping("1.1.1.1" 5 60));
 #endif
 //MSH_CMD_EXPORT(ping, ping network host);
 FINSH_FUNCTION_EXPORT_ALIAS(cmd_ping, __cmd_ping, ping network host);
