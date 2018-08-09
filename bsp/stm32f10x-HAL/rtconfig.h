@@ -221,11 +221,11 @@
 /* STM32F101ZG is not set */
 /* STM32F102CB is not set */
 /* STM32F102RB is not set */
-/* STM32F103C8 is not set */
+#define STM32F103C8
 /* STM32F103CB is not set */
 /* STM32F103R8 is not set */
 /* STM32F103RB is not set */
-#define STM32F103RC
+/* STM32F103RC is not set */
 /* STM32F103RD is not set */
 /* STM32F103RE is not set */
 /* STM32F103RF is not set */
@@ -257,8 +257,8 @@
 /* RT_USING_HSI is not set */
 #define RT_HSE_VALUE 8000000
 #define RT_USING_UART1
-/* RT_USING_UART2 is not set */
-/* RT_USING_UART3 is not set */
+#define RT_USING_UART2
+#define RT_USING_UART3
 /* RT_USING_SDCARD is not set */
 
 #endif
