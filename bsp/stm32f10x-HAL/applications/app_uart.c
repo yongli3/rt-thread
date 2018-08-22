@@ -96,6 +96,9 @@ rt_err_t uart_open(const char *name)
             return -RT_ERROR;
         }
 
+        /* 初始化事件对象 */
+        rt_event_init(&event, "event", RT_IPC_FLAG_FIFO);
+
         /* 打开设备，以可读写、中断方式 */
         res = rt_device_open(uart_device, RT_DEVICE_OFLAG_RDWR | RT_DEVICE_FLAG_INT_RX );       
         /* 检查返回值 */
@@ -104,9 +107,6 @@ rt_err_t uart_open(const char *name)
             rt_kprintf("open %s device error.%d\n",name,res);
             return -RT_ERROR;
         }
-
-        /* 初始化事件对象 */
-        rt_event_init(&event, "event", RT_IPC_FLAG_FIFO); 
     }
     else
     {

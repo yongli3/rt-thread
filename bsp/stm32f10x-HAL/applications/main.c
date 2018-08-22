@@ -18,9 +18,45 @@
 
 //#include <drivers/pin.h>
 
+#define UART4_TX   21 // PB10
 #define KEY0   22 // PB11
 
 #define LED_PIN 2 //PC13
+
+// for 9600 bps
+#define DELAY_US (104)
+// 8N1 115200 7us=1 pluse
+// 8N1 9600 bps = 1200 bytes = 12000 bits/second; 83us = one pluse
+// TICK_PER_SECOND = 100000 1 tick = 10us
+static int uart4_tx(int argc, char** argv)
+{
+    int i = 0;
+    unsigned char ch = 0xaa;
+
+    rt_kprintf("TX %x\n", ch);
+
+    // connected to PA3 for uart2 to receive
+
+    // start to send one 8-bit
+    rt_pin_write(UART4_TX, 0);
+    rt_hw_us_delay(DELAY_US);
+
+    for (i = 0; i < 8; i++)
+    {
+        if (ch & 0x1)
+            rt_pin_write(UART4_TX, 1);
+        else
+            rt_pin_write(UART4_TX, 0);
+
+        rt_hw_us_delay(DELAY_US);
+        ch >>= 1;
+    }
+
+    rt_pin_write(UART4_TX, 1);
+    rt_hw_us_delay(DELAY_US);
+    return 0;
+}
+MSH_CMD_EXPORT(uart4_tx, uart4 TX);
 
 static void led_thread_entry(void* parameter)
 {
@@ -69,12 +105,14 @@ static void uart2_thread_entry(void* parameter)
 
     while (1)
     {   
-        /* 读数据 */
+        /* read from uart2 */
         uart_rx_data = uart_getchar();
+        // output to uart1
+        rt_kprintf("%c", uart_rx_data);
         /* 错位 */
-        uart_rx_data = uart_rx_data + 1;
+        //uart_rx_data = uart_rx_data + 1;
         /* 输出 */
-        uart_putchar(uart_rx_data);
+        //uart_putchar(uart_rx_data);
 
     }            
 }
@@ -82,7 +120,7 @@ static void uart2_thread_entry(void* parameter)
 void hdr_callback(void *args)
 {
     char *a = args;
-    rt_kprintf("key0 IRQ %x\n", rt_pin_read(KEY0));
+    //rt_kprintf("key0 IRQ %x\n", rt_pin_read(KEY0));
     return;
 }
 
@@ -104,7 +142,11 @@ int main(void)
 {
     int i = 0;
 
-    rt_kprintf("Built on ...%s %s\n", __DATE__, __TIME__);
+    rt_kprintf("Built on ...%s %s %u\n", __DATE__, __TIME__, RT_TICK_PER_SECOND);
+
+ 
+    rt_pin_mode(UART4_TX, PIN_MODE_OUTPUT);
+    rt_pin_write(UART4_TX, 1);
 #if 0
 // gpio pin IRQ test
     rt_pin_mode(PINRX, PIN_IRQ_MODE_RISING_FALLING);
@@ -137,6 +179,7 @@ int main(void)
         rt_kprintf("thread_create error!\n");
 
 
+#if 0
     // create thread
      rt_thread_t tid;
     tid = rt_thread_create("uart2",
@@ -149,6 +192,7 @@ int main(void)
         rt_thread_startup(tid);
     else
         rt_kprintf("thread_create error!\n");
+#endif
 
     // create thread
      rt_thread_t tid_led;
