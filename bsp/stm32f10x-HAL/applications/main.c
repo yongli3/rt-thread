@@ -19,19 +19,48 @@
 //#include <drivers/pin.h>
 
 #define UART4_TX   21 // PB10
-#define KEY0   22 // PB11
+#define UART4_RX   22 // PB11
 
 #define LED_PIN 2 //PC13
 
 // for 9600 bps
 #define DELAY_US (104)
+#define DELAY_US_RX (104)
+
+static struct rt_event uart4_rx_event;
+
 // 8N1 115200 7us=1 pluse
 // 8N1 9600 bps = 1200 bytes = 12000 bits/second; 83us = one pluse
+// real test, 9600 bps  one pluse = 100us
+
+TX=0xaa 
+
+HIGH
+200us Low  0
+100us High 1
+100us low  0
+100us High 1
+100us Low  0
+100us High 1
+100us Low  0
+HIGH       1
+
+
+
 // TICK_PER_SECOND = 100000 1 tick = 10us
 static int uart4_tx(int argc, char** argv)
 {
     int i = 0;
     unsigned char ch = 0xaa;
+
+    if (1 == argc)
+    {
+        ch = 0xaa;
+    }
+    else 
+    {
+        ch = argv[1][0];
+    }
 
     rt_kprintf("TX %x\n", ch);
 
@@ -58,6 +87,7 @@ static int uart4_tx(int argc, char** argv)
 }
 MSH_CMD_EXPORT(uart4_tx, uart4 TX);
 
+#define LED_DELAY   (10)  // 10us real = 13us
 static void led_thread_entry(void* parameter)
 {
     rt_pin_mode(LED_PIN, PIN_MODE_OUTPUT);
@@ -67,12 +97,14 @@ static void led_thread_entry(void* parameter)
         /* 点亮 led */
         //rt_kprintf("led on, count : %d\r\n", count);
         rt_pin_write(LED_PIN, 0);
-        rt_thread_delay(RT_TICK_PER_SECOND / 2); 
-
+        rt_thread_delay(RT_TICK_PER_SECOND);  // 1 tick = 1 ms 
+        //rt_hw_us_delay(LED_DELAY); // 
+        
         /* 关灭 led */
         //rt_kprintf("led off\r\n");
         rt_pin_write(LED_PIN, 1);
-        rt_thread_delay(RT_TICK_PER_SECOND / 2);
+        rt_thread_delay(RT_TICK_PER_SECOND); // RT_TICK_PER_SECOND / 2
+        //rt_hw_us_delay(LED_DELAY);
     }
 }
 
@@ -117,22 +149,80 @@ static void uart2_thread_entry(void* parameter)
     }            
 }
 
-void hdr_callback(void *args)
+static unsigned char uart4_rx_processing = 0;
+void uart4_rx_callback(void *args)
 {
     char *a = args;
-    //rt_kprintf("key0 IRQ %x\n", rt_pin_read(KEY0));
+    //rt_kprintf("F %x\n", uart4_rx_processing);
+    if (uart4_rx_processing)
+        return;
+
+    //uart4_rx_start = 1;
+    rt_event_send(&uart4_rx_event, 1);
     return;
 }
 
 static void extirq_thread_entry(void* parameter)
 {
+    rt_uint32_t e;
+    int i = 0;
+    unsigned char ch = 0;
+    unsigned char bit0, bit1, bit2, bit3, bit4, bit5, bit6, bit7;
+
     rt_kprintf("+%s\n", __func__);
 
-    rt_pin_mode(KEY0, PIN_MODE_INPUT_PULLDOWN);
-                              
-    rt_pin_attach_irq(KEY0, PIN_IRQ_MODE_RISING, hdr_callback, (void*)"callback args");
-    rt_pin_irq_enable(KEY0, PIN_IRQ_ENABLE);
+    i = rt_event_init(&uart4_rx_event, "event", RT_IPC_FLAG_FIFO);
+    if (i != RT_EOK)
+    {
+        rt_kprintf("init event failed.\n");
+        return;
+    }
 
+    rt_pin_mode(UART4_RX, PIN_MODE_INPUT_PULLUP);
+                              
+    rt_pin_attach_irq(UART4_RX, PIN_IRQ_MODE_FALLING, uart4_rx_callback, (void*)"callback args");
+    rt_pin_irq_enable(UART4_RX, PIN_IRQ_ENABLE);
+
+    while (1)
+   {
+    //while (uart4_rx_start == 0);
+    if (rt_event_recv(&uart4_rx_event, 1,
+                      RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR,
+                      RT_WAITING_FOREVER, &e) == RT_EOK)
+    {
+        //rt_kprintf("recv event 0x%x\n", e);
+    }
+    else
+    {
+        rt_kprintf("recv event error!");
+    }
+
+    uart4_rx_processing = 1;
+    // get the RX start, check 8 bits 
+    //rt_pin_irq_enable(UART4_RX, PIN_IRQ_DISABLE);
+    //rt_pin_detach_irq(UART4_RX);
+
+    // skip start bit
+    rt_hw_us_delay(DELAY_US_RX / 2);
+
+    ch = 0;
+    for (i = 0; i < 8; i++)
+    {
+        rt_hw_us_delay(DELAY_US_RX);
+        if (rt_pin_read(UART4_RX))
+            ch |= (1 << i);
+        else
+            ch &= ~(1 << i);
+    }
+
+    rt_hw_us_delay(DELAY_US_RX * 3 / 2);
+    //rt_thread_delay(RT_TICK_PER_SECOND);
+    rt_kprintf("R:%x\n", ch);
+    uart4_rx_processing = 0;
+
+    //rt_pin_attach_irq(UART4_RX, PIN_IRQ_MODE_FALLING, uart4_rx_callback, (void*)"callback args");
+    //rt_pin_irq_enable(UART4_RX, PIN_IRQ_ENABLE);
+}
     return;
 }
 
@@ -171,7 +261,7 @@ int main(void)
                     extirq_thread_entry,
                     RT_NULL,
                     1024, 
-                    4, 
+                    2, 
                     10);
     if (tid_irq != RT_NULL)
         rt_thread_startup(tid_irq);
@@ -200,7 +290,7 @@ int main(void)
                     led_thread_entry,
                     RT_NULL,
                     1024, 
-                    2, 
+                    7, 
                     10);
     if (tid_led != RT_NULL)
         rt_thread_startup(tid_led);
@@ -222,22 +312,24 @@ int main(void)
 
 int hello_func(int argc, char** argv)
 {
+    rt_kprintf("Built on ...%s %s %u\n", __DATE__, __TIME__, RT_TICK_PER_SECOND);
     rt_kprintf("Hello RT-Thread!\n");
     return 0;
 }
 MSH_CMD_EXPORT(hello_func, say hello);
 
+#if 0
 int gpio(int argc, char** argv)
 {
 
     rt_kprintf("Hello RT-Thread! %d\n", argc);
-    rt_pin_mode(KEY0, PIN_MODE_INPUT_PULLUP);
+    rt_pin_mode(UART4_RX, PIN_MODE_INPUT_PULLUP);
     
-    rt_kprintf("%d %d\n", KEY0, rt_pin_read(KEY0));    
+    rt_kprintf("%d %d\n", UART4_RX, rt_pin_read(UART4_RX));    
     return 0;
 }
 MSH_CMD_EXPORT(gpio, gpio tool);
-
+#endif
 
 
 
