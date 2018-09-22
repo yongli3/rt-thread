@@ -33,6 +33,7 @@ static struct rt_event uart4_rx_event;
 // 8N1 9600 bps = 1200 bytes = 12000 bits/second; 83us = one pluse
 // real test, 9600 bps  one pluse = 100us
 
+#if 0
 TX=0xaa 
 
 HIGH
@@ -45,7 +46,7 @@ HIGH
 100us Low  0
 HIGH       1
 
-
+#endif
 
 // TICK_PER_SECOND = 100000 1 tick = 10us
 static int uart4_tx(int argc, char** argv)
@@ -317,6 +318,93 @@ int hello_func(int argc, char** argv)
     return 0;
 }
 MSH_CMD_EXPORT(hello_func, say hello);
+
+static ADC_HandleTypeDef g_AdcHandle;
+
+static void ConfigureADC()
+{
+    GPIO_InitTypeDef gpioInit;
+
+    //__GPIOC_CLK_ENABLE();
+    //__ADC1_CLK_ENABLE();
+    __HAL_RCC_ADC1_CLK_ENABLE();
+
+    gpioInit.Pin = GPIO_PIN_1;
+    gpioInit.Mode = GPIO_MODE_ANALOG;
+    gpioInit.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOC, &gpioInit);
+
+    //rt_pin_mode(PINTX, GPIO_MODE_OUTPUT_PP);
+    
+    //HAL_NVIC_SetPriority(ADC_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
+
+    ADC_ChannelConfTypeDef adcChannel;
+
+    g_AdcHandle.Instance = ADC1;
+
+    //g_AdcHandle.Init.ClockPrescaler = ADC_CLOCKPRESCALER_PCLK_DIV2;
+    //g_AdcHandle.Init.Resolution = ADC_RESOLUTION_12B;
+    g_AdcHandle.Init.ScanConvMode = DISABLE;
+    g_AdcHandle.Init.ContinuousConvMode = ENABLE;
+    g_AdcHandle.Init.DiscontinuousConvMode = DISABLE;
+    g_AdcHandle.Init.NbrOfDiscConversion = 0;
+    //g_AdcHandle.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+    g_AdcHandle.Init.ExternalTrigConv = ADC_EXTERNALTRIGCONV_T1_CC1;
+    g_AdcHandle.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+    g_AdcHandle.Init.NbrOfConversion = 1;
+    //g_AdcHandle.Init.DMAContinuousRequests = ENABLE;
+    //g_AdcHandle.Init.EOCSelection = DISABLE;
+
+    HAL_ADC_Init(&g_AdcHandle);
+
+    adcChannel.Channel = ADC_CHANNEL_11;
+    adcChannel.Rank = 1;
+    //adcChannel.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+    //adcChannel.Offset = 0;
+
+    if (HAL_ADC_ConfigChannel(&g_AdcHandle, &adcChannel) != HAL_OK)
+    {
+        //asm("bkpt 255");
+    }
+}
+
+int adc_func(int argc, char** argv)
+{
+    uint32_t g_ADCValue;
+    HAL_StatusTypeDef ret; 
+    rt_kprintf("Built on ...%s %s %u\n", __DATE__, __TIME__, RT_TICK_PER_SECOND);
+    rt_kprintf("Hello RT-Thread!\n");
+
+
+// https://visualgdb.com/tutorials/arm/stm32/adc/
+    //__GPIOC_CLK_ENABLE();
+    //__ADC1_CLK_ENABLE();
+
+
+    ConfigureADC();
+
+    HAL_ADC_Start(&g_AdcHandle);
+    
+    ret = HAL_ADC_PollForConversion(&g_AdcHandle, 50);
+    if (HAL_OK == ret) {
+        g_ADCValue = HAL_ADC_GetValue(&g_AdcHandle);
+    }
+
+#if 0
+    if(HAL_IS_BIT_SET(HAL_ADC_GetState(&hadc1), HAL_ADC_STATE_REG_EOC)) {
+        
+        AD_Value = HAL_ADC_GetValue(&hadc1);
+        HAL_Delay(1000);
+    }
+#endif
+
+    HAL_ADC_Stop(&g_AdcHandle);
+
+    return 0;
+}
+MSH_CMD_EXPORT(adc_func, adc test);
+
 
 #if 0
 int gpio(int argc, char** argv)
