@@ -2,6 +2,8 @@
 #ifndef __RTTHREAD_CFG_H__
 #define __RTTHREAD_CFG_H__
 
+#define STM32F030xC		1
+
 /* RT_NAME_MAX*/
 #define RT_NAME_MAX	   8
 

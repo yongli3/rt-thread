@@ -212,6 +212,33 @@ void USART2_IRQHandler(void)
 }
 #endif /* RT_USING_UART2 */
 
+struct stm32_uart uart3 =
+{
+    USART3,
+    USART3_6_IRQn,
+};
+struct rt_serial_device serial3;
+
+void USART3_6_IRQHandler(void)
+{
+    struct stm32_uart* uart;
+
+    uart = &uart3;
+
+    /* enter interrupt */
+    rt_interrupt_enter();
+    if(USART_GetITStatus(uart->uart_device, USART_IT_RXNE) != RESET)
+    {
+        rt_hw_serial_isr(&serial3, RT_SERIAL_EVENT_RX_IND);
+    }
+    
+    if(USART_GetITStatus(uart->uart_device, USART_IT_TC) != RESET)
+    {
+      USART_ClearITPendingBit(uart->uart_device, USART_IT_TC);
+    }
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
 static void RCC_Configuration(void)
 {
 #ifdef RT_USING_UART1
@@ -354,4 +381,19 @@ void rt_hw_usart_init(void)
                           RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
                           uart);
 #endif /* RT_USING_UART2 */
+
+    uart = &uart3;
+
+    config.baud_rate = BAUD_RATE_115200;
+    serial3.ops    = &stm32_uart_ops;
+    serial3.config = config;
+
+    NVIC_Configuration(&uart3);
+
+    /* register UART1 device */
+    rt_hw_serial_register(&serial3, "uart3",
+                          RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
+                          uart);
+
+
 }

@@ -82,7 +82,6 @@ int rt_application_init()
 }
 
 static rt_device_t uart2_dev = RT_NULL;
-
 static int uart2_test(int argc, char** argv)
 {
     rt_err_t ret = RT_ERROR;
@@ -108,14 +107,39 @@ static int uart2_test(int argc, char** argv)
         rt_thread_delay(RT_TICK_PER_SECOND);
     }
 }
-
-
     return 0;
 }
 MSH_CMD_EXPORT(uart2_test, uart2 test);
 
-static int uart3_test()
-{	
-	return 0;
+
+static rt_device_t uart3_dev = RT_NULL;
+static int uart3_test(int argc, char** argv)
+{
+        rt_err_t ret = RT_ERROR;
+        
+        char test[80] = "uart3>";
+        rt_kprintf("Hello RT-Thread!\n");
+    
+        uart3_dev = rt_device_find("uart3");
+        if (uart3_dev != RT_NULL)
+        {
+            ret = rt_device_open(uart3_dev, RT_DEVICE_OFLAG_RDWR|RT_DEVICE_FLAG_INT_RX);
+            if (ret != RT_EOK) {
+                rt_kprintf("Open error!\n");
+                return -1;
+            }
+    
+            rt_device_write(uart3_dev, 0, test, sizeof(test));
+            while(1){
+    
+            rt_size_t reclen = rt_device_read(uart3_dev, 0, test, 10);
+            if(reclen > 0) 
+                rt_device_write(uart3_dev, 0, test, reclen);
+            rt_thread_delay(RT_TICK_PER_SECOND);
+        }
+    }
+        return 0;
+
+    return 0;
 }
 MSH_CMD_EXPORT(uart3_test, uart3 test);
