@@ -22,6 +22,7 @@
 
 #include <board.h>
 #include <rtthread.h>
+#include <finsh.h>
 
 #include "led.h"
 
@@ -49,6 +50,7 @@ static void rt_init_thread_entry(void* parameter)
 
 /* Set finsh device */
 #ifdef  RT_USING_FINSH
+    finsh_system_init();
     finsh_set_device(RT_CONSOLE_DEVICE_NAME);
 #endif  /* RT_USING_FINSH */
 
@@ -80,4 +82,9 @@ int rt_application_init()
 }
 
 
-/*@}*/
+int hello_func(int argc, char** argv)
+{
+    rt_kprintf("Hello RT-Thread!\n");
+    return 0;
+}
+MSH_CMD_EXPORT(hello_func, say hello);
