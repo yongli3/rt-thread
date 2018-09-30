@@ -53,6 +53,7 @@
 #define RT_USING_COMPONENTS_INIT
 #define RT_USING_USER_MAIN
 #define RT_MAIN_THREAD_STACK_SIZE 2048
+#define RT_MAIN_THREAD_PRIORITY 10
 
 /* C++ features */
 
@@ -108,6 +109,7 @@
 #define RT_USING_MTD_NAND
 #define RT_MTD_NAND_DEBUG
 #define RT_USING_RTC
+#define RT_USING_SOFT_RTC
 #define RT_USING_SDIO
 #define RT_SDIO_STACK_SIZE 512
 #define RT_SDIO_THREAD_PRIORITY 15
@@ -188,6 +190,9 @@
 /* Modbus master and slave stack */
 
 
+/* AT commands */
+
+
 /* VBUS(Virtual Software BUS) */
 
 
@@ -208,6 +213,9 @@
 
 
 /* Wiced WiFi */
+
+
+/* IoT Cloud */
 
 
 /* security packages */
@@ -232,6 +240,8 @@
 
 
 /* sample package */
+
+/* samples: kernel and components samples */
 
 
 /* example package: hello */
