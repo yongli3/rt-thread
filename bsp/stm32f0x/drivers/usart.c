@@ -32,6 +32,22 @@
 #define UART2_GPIO_AF			GPIO_AF_1
 #define UART2_GPIO				GPIOA
 
+/* USART3 */
+#define UART3_GPIO_TX			GPIO_Pin_10
+#define UART3_GPIO_TX_SOURCE	GPIO_PinSource10
+#define UART3_GPIO_RX			GPIO_Pin_11
+#define UART3_GPIO_RX_SOURCE	GPIO_PinSource11
+#define UART3_GPIO_AF			GPIO_AF_4
+#define UART3_GPIO				GPIOB
+
+/* USART4 */
+#define UART4_GPIO_TX			GPIO_Pin_0
+#define UART4_GPIO_TX_SOURCE	GPIO_PinSource0
+#define UART4_GPIO_RX			GPIO_Pin_1
+#define UART4_GPIO_RX_SOURCE	GPIO_PinSource1
+#define UART4_GPIO_AF			GPIO_AF_4
+#define UART4_GPIO				GPIOA
+
 /* STM32 uart driver */
 struct stm32_uart
 {
@@ -212,6 +228,15 @@ static void RCC_Configuration(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 #endif /* RT_USING_UART2 */
 
+#ifdef RT_USING_UART3
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+#endif
+
+#ifdef RT_USING_UART4
+        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+        RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4, ENABLE);
+#endif
 }
 
 static void GPIO_Configuration(void)
@@ -234,8 +259,8 @@ static void GPIO_Configuration(void)
 	GPIO_Init(UART1_GPIO, &GPIO_InitStructure);
 #endif /* RT_USING_UART1 */
 
-#ifdef RT_USING_UART2
 	/* Connect PXx to USARTx_Tx */
+#ifdef RT_USING_UART2
 	GPIO_PinAFConfig(UART2_GPIO, UART2_GPIO_TX_SOURCE, UART2_GPIO_AF);
 
 	/* Connect PXx to USARTx_Rx */
@@ -249,6 +274,36 @@ static void GPIO_Configuration(void)
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
 #endif /* RT_USING_UART2 */
+
+#ifdef RT_USING_UART3
+	GPIO_PinAFConfig(UART3_GPIO, UART3_GPIO_TX_SOURCE, UART3_GPIO_AF);
+
+	/* Connect PXx to USARTx_Rx */
+	GPIO_PinAFConfig(UART3_GPIO, UART3_GPIO_RX_SOURCE, UART3_GPIO_AF);
+
+	/* Configure USART Tx, Rx as alternate function push-pull */
+	GPIO_InitStructure.GPIO_Pin = UART3_GPIO_TX | UART3_GPIO_RX;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
+#endif
+
+#ifdef RT_USING_UART4
+	GPIO_PinAFConfig(UART4_GPIO, UART4_GPIO_TX_SOURCE, UART4_GPIO_AF);
+
+	/* Connect PXx to USARTx_Rx */
+	GPIO_PinAFConfig(UART4_GPIO, UART4_GPIO_RX_SOURCE, UART4_GPIO_AF);
+
+	/* Configure USART Tx, Rx as alternate function push-pull */
+	GPIO_InitStructure.GPIO_Pin = UART4_GPIO_TX | UART4_GPIO_RX;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_Init(UART4_GPIO, &GPIO_InitStructure);
+#endif
 }
 
 static void NVIC_Configuration(struct stm32_uart* uart)

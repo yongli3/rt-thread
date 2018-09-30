@@ -111,7 +111,7 @@ __Vectors       DCD     __initial_sp                   ; Top of Stack
                 DCD     SPI2_IRQHandler                ; SPI2
                 DCD     USART1_IRQHandler              ; USART1
                 DCD     USART2_IRQHandler              ; USART2
-                DCD     0                              ; Reserved
+                DCD     USART3_8_IRQHandler            ; USART3, USART4, USART5, USART6, USART7, USART8
                 DCD     CEC_IRQHandler                 ; CEC
                 DCD     0                              ; Reserved
                 
@@ -186,6 +186,7 @@ Default_Handler PROC
                 EXPORT  SPI2_IRQHandler                [WEAK]
                 EXPORT  USART1_IRQHandler              [WEAK]
                 EXPORT  USART2_IRQHandler              [WEAK]
+                EXPORT  USART3_8_IRQHandler            [WEAK]
                 EXPORT  CEC_IRQHandler                 [WEAK]
 
 
@@ -217,6 +218,7 @@ SPI1_IRQHandler
 SPI2_IRQHandler
 USART1_IRQHandler
 USART2_IRQHandler
+USART3_8_IRQHandler
 CEC_IRQHandler   
 
                 B       .
