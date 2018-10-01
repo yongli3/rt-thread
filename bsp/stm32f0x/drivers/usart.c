@@ -219,17 +219,36 @@ struct stm32_uart uart3 =
 };
 struct rt_serial_device serial3;
 
+struct stm32_uart uart4 =
+{
+    USART4,
+    USART3_6_IRQn,
+};
+struct rt_serial_device serial4;
+
 void USART3_6_IRQHandler(void)
 {
     struct stm32_uart* uart;
 
     uart = &uart3;
-
     /* enter interrupt */
     rt_interrupt_enter();
     if(USART_GetITStatus(uart->uart_device, USART_IT_RXNE) != RESET)
     {
         rt_hw_serial_isr(&serial3, RT_SERIAL_EVENT_RX_IND);
+    }
+    
+    if(USART_GetITStatus(uart->uart_device, USART_IT_TC) != RESET)
+    {
+      USART_ClearITPendingBit(uart->uart_device, USART_IT_TC);
+    }
+
+    uart = &uart4;
+    /* enter interrupt */
+    rt_interrupt_enter();
+    if(USART_GetITStatus(uart->uart_device, USART_IT_RXNE) != RESET)
+    {
+        rt_hw_serial_isr(&serial4, RT_SERIAL_EVENT_RX_IND);
     }
     
     if(USART_GetITStatus(uart->uart_device, USART_IT_TC) != RESET)
@@ -255,14 +274,12 @@ static void RCC_Configuration(void)
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
 #endif /* RT_USING_UART2 */
 
-#ifdef RT_USING_UART3
+#ifdef RT_USING_UART3_4
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
-#endif
 
-#ifdef RT_USING_UART4
-        RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
-        RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART4, ENABLE);
 #endif
 }
 
@@ -302,7 +319,7 @@ static void GPIO_Configuration(void)
 	GPIO_Init(UART2_GPIO, &GPIO_InitStructure);
 #endif /* RT_USING_UART2 */
 
-#ifdef RT_USING_UART3
+#ifdef RT_USING_UART3_4
 	GPIO_PinAFConfig(UART3_GPIO, UART3_GPIO_TX_SOURCE, UART3_GPIO_AF);
 
 	/* Connect PXx to USARTx_Rx */
@@ -315,9 +332,7 @@ static void GPIO_Configuration(void)
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
 	GPIO_Init(UART3_GPIO, &GPIO_InitStructure);
-#endif
 
-#ifdef RT_USING_UART4
 	GPIO_PinAFConfig(UART4_GPIO, UART4_GPIO_TX_SOURCE, UART4_GPIO_AF);
 
 	/* Connect PXx to USARTx_Rx */
@@ -382,8 +397,8 @@ void rt_hw_usart_init(void)
                           uart);
 #endif /* RT_USING_UART2 */
 
+#ifdef RT_USING_UART3_4
     uart = &uart3;
-
     config.baud_rate = BAUD_RATE_115200;
     serial3.ops    = &stm32_uart_ops;
     serial3.config = config;
@@ -395,5 +410,16 @@ void rt_hw_usart_init(void)
                           RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
                           uart);
 
+    uart = &uart4;
+    config.baud_rate = BAUD_RATE_115200;
+    serial4.ops    = &stm32_uart_ops;
+    serial4.config = config;
 
+    NVIC_Configuration(&uart4);
+
+    /* register UART1 device */
+    rt_hw_serial_register(&serial4, "uart4",
+                          RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
+                          uart);
+#endif
 }
